@@ -12,66 +12,75 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import ru.fbear.mirror_companion.settings.Settings
+import java.io.IOException
 
 class CompanionViewModel : ViewModel() {
-    private val retrofit = Retrofit.Builder()
-        .baseUrl("https://localhost/")    //todo: Вынести в настройки
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+    private lateinit var retrofit: Retrofit
 
-    val api = retrofit.create(PhotoMirrorApi::class.java)
+    private lateinit var api: PhotoMirrorApi
 
-    //    lateinit var printServices: MutableLiveData<List<String>>
-    var printServices = MutableLiveData<List<String>>(emptyList())
+    val printServices = MutableLiveData<List<String>>(emptyList())
     val printServiceMediaSizes = MutableLiveData(emptyList<String>())
     val printServiceLayouts = MutableLiveData(emptyList<String>())
-    val printServicePreview = MutableLiveData<ImageBitmap>(null)
+    val printServicePreview = MutableLiveData<ImageBitmap?>(null)
 
-    val temp = Settings(
-        "Камера 1",
-        "Принтер 1",
-        "10x15",
-        true,
-        "10.0.0.1",
-        "layout",
-        "Hello",
-        "Shoot",
-        "Wait",
-        5,
-        "image.png",
-        "Times New Roman",
-        100,
-        0uL
-    )
+    val fonts = MutableLiveData<List<String>>(emptyList())
+    val cameras = MutableLiveData<List<String>>(emptyList())
+    val settings = MutableLiveData<Settings>(null)
 
-    //    lateinit var fonts: MutableLiveData<List<String>>
-    var fonts = MutableLiveData<List<String>>(emptyList())
+    private val oldSettings = MutableLiveData<Settings>(null)
 
-    //    lateinit var cameras: MutableLiveData<List<String>>
-    var cameras = MutableLiveData<List<String>>(emptyList())
+    fun initConnection(address: String) {
+        retrofit = Retrofit.Builder()
+            .baseUrl("http://$address:8080")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        api = retrofit.create(PhotoMirrorApi::class.java)
 
-    //    lateinit var settings: MutableLiveData<Settings>
-    var settings = MutableLiveData(temp)
+        update(Type.Settings)
 
-    //    private lateinit var oldSettings: MutableLiveData<Settings>
-    private var oldSettings = MutableLiveData(temp)
+        update(Type.PrintServices)
 
-    init {
-        api.getPrintServices().enqueue(object : Callback<List<String>> {
-            override fun onResponse(call: Call<List<String>>, response: Response<List<String>>) {
-                response.body()?.let { printServices = MutableLiveData(it) }
+        update(Type.Fonts)
+
+        update(Type.Cameras)
+
+        settings.observeForever { settings ->
+            if (settings == null || oldSettings.value == null) {
+                return@observeForever
             }
-
-            override fun onFailure(call: Call<List<String>>, t: Throwable) {
-//                TODO("Not yet implemented")
+            if (settings.printerName != oldSettings.value!!.printerName || printServiceMediaSizes.value!!.isEmpty()) {
+                update(Type.MediaSizeNames)
             }
-        })
+            if (settings.printerMediaSizeName != oldSettings.value!!.printerMediaSizeName || printServiceLayouts.value!!.isEmpty()) {
+                update(Type.Layouts)
+            }
+            if (settings.layout != oldSettings.value!!.layout || printServicePreview.value == null) {
+                update(Type.LayoutWithPhoto)
+            }
+            oldSettings.value = settings
+        }
+    }
 
+
+    private fun update(type: Type) {
+        when (type) {
+            Type.MediaSizeNames -> updateWithReturnTypeListOfString(type)
+            Type.Layouts -> updateWithReturnTypeListOfString(type)
+            Type.PrintServices -> updateWithReturnTypeListOfString(type)
+            Type.Fonts -> updateWithReturnTypeListOfString(type)
+            Type.Cameras -> updateWithReturnTypeListOfString(type)
+            Type.Settings -> updateSettings()
+            Type.LayoutWithPhoto -> updateLayoutWithPhoto()
+        }
+    }
+
+    private fun updateSettings() {
         api.getSettings().enqueue(object : Callback<Settings> {
             override fun onResponse(call: Call<Settings>, response: Response<Settings>) {
                 response.body()?.let {
-                    settings = MutableLiveData(it)
-                    oldSettings = MutableLiveData(it)
+                    oldSettings.value = it
+                    settings.value = it
                 }
             }
 
@@ -79,74 +88,72 @@ class CompanionViewModel : ViewModel() {
 //                TODO("Not yet implemented")
             }
         })
+    }
 
-        api.getFonts().enqueue(object : Callback<List<String>> {
+    private fun updateLayoutWithPhoto() {
+        val settings = settings.value!!
+        api.getLayoutWithPhoto(settings.layout, settings.printerMediaSizeName, settings.printerName)
+            .enqueue(object : Callback<ResponseBody> {
+                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                    response.body()?.let {
+                        printServicePreview.value =
+                            BitmapFactory.decodeByteArray(it.bytes(), 0, it.bytes().size)?.asImageBitmap()
+                    }
+                }
+
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+//                                TODO("Not yet implemented")
+                }
+
+            })
+    }
+
+    private fun updateWithReturnTypeListOfString(type: Type) {
+        val settings = settings.value
+        val callback = object : Callback<List<String>> {
             override fun onResponse(call: Call<List<String>>, response: Response<List<String>>) {
-                response.body()?.let { fonts = MutableLiveData(it) }
+                response.body()?.let {
+                    when (type) {
+                        Type.MediaSizeNames -> printServiceMediaSizes.value = it
+                        Type.Layouts -> printServiceLayouts.value = it
+                        Type.PrintServices -> printServices.value = it
+                        Type.Fonts -> fonts.value = it
+                        Type.Cameras -> cameras.value = it
+                        else -> throw IllegalArgumentException("Impossible")
+                    }
+                }
             }
 
             override fun onFailure(call: Call<List<String>>, t: Throwable) {
-//                TODO("Not yet implemented")
-            }
-        })
-
-        api.getCameras().enqueue(object : Callback<List<String>> {
-            override fun onResponse(call: Call<List<String>>, response: Response<List<String>>) {
-                response.body()?.let { cameras = MutableLiveData(it) }
-            }
-
-            override fun onFailure(call: Call<List<String>>, t: Throwable) {
-//                TODO("Not yet implemented")
-            }
-        })
-
-        settings.observeForever { settings ->
-            when {
-                settings.printerName != oldSettings.value!!.printerName -> {
-                    api.getMediaSizeNames(settings.printerName).enqueue(object : Callback<List<String>> {
-                        override fun onResponse(call: Call<List<String>>, response: Response<List<String>>) {
-                            response.body()?.let { printServiceMediaSizes.value = it }
-                        }
-
-                        override fun onFailure(call: Call<List<String>>, t: Throwable) {
 //                            TODO("Not yet implemented")
-                        }
-                    })
-                }
-                settings.printerMediaSizeName != oldSettings.value!!.printerName -> {
-                    api.getLayouts(settings.printerMediaSizeName, settings.printerName)
-                        .enqueue(object : Callback<List<String>> {
-                            override fun onResponse(call: Call<List<String>>, response: Response<List<String>>) {
-                                response.body()?.let { printServiceLayouts.value = it }
-                            }
-
-                            override fun onFailure(call: Call<List<String>>, t: Throwable) {
-//                                TODO("Not yet implemented")
-                            }
-                        })
-                }
-                settings.layout != oldSettings.value!!.layout -> {
-                    api.getLayoutWithPhoto(settings.layout, settings.printerMediaSizeName)
-                        .enqueue(object : Callback<ResponseBody> {
-                            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                                response.body()?.let {
-                                    printServicePreview.value =
-                                        BitmapFactory.decodeByteArray(it.bytes(), 0, it.bytes().size).asImageBitmap()
-                                }
-                            }
-
-                            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-//                                TODO("Not yet implemented")
-                            }
-
-                        })
-                }
             }
-            oldSettings.value = settings
+        }
+
+        when (type) {
+            Type.MediaSizeNames -> api.getMediaSizeNames(settings!!.printerName).enqueue(callback)
+            Type.Layouts -> api.getLayouts(settings!!.printerMediaSizeName, settings.printerName).enqueue(callback)
+            Type.PrintServices -> api.getPrintServices().enqueue(callback)
+            Type.Fonts -> api.getFonts().enqueue(callback)
+            Type.Cameras -> api.getCameras().enqueue(callback)
+            else -> throw IllegalArgumentException("Impossible")
         }
     }
 
     fun checkInetAddress(inetAddress: String): Boolean {
-        return api.checkInetAddress(inetAddress).execute().body() ?: false
+        return try {
+            api.checkInetAddress(inetAddress).execute().body() ?: false
+        } catch (e: IOException) {
+            false
+        }
     }
+}
+
+enum class Type {
+    MediaSizeNames,
+    Layouts,
+    PrintServices,
+    Fonts,
+    Cameras,
+    LayoutWithPhoto,
+    Settings
 }

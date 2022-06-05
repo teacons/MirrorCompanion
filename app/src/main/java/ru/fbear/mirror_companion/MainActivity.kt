@@ -5,35 +5,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import ru.fbear.mirror_companion.settings.Settings
 import ru.fbear.mirror_companion.ui.theme.MirrorCompanionTheme
+
+enum class State {
+    ConnectionSettings, MirrorSettings
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MirrorCompanionTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    Settings()
+                    var state by remember { mutableStateOf(State.ConnectionSettings) }
+                    when (state) {
+                        State.ConnectionSettings -> ConnectionSettings { state = State.MirrorSettings }
+                        State.MirrorSettings -> Settings()
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    MirrorCompanionTheme {
-        Greeting("Android")
     }
 }

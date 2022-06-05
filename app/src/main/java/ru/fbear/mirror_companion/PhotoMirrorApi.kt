@@ -18,10 +18,17 @@ interface PhotoMirrorApi {
     fun getMediaSizeNames(@Query("print_service", encoded = true) printService: String): Call<List<String>>
 
     @GET("/api/get/layouts")
-    fun getLayouts(@Query("media_size_name", encoded = true) mediaSizeName: String, @Query("print_service", encoded = true) printService: String): Call<List<String>>
+    fun getLayouts(
+        @Query("media_size_name", encoded = true) mediaSizeName: String,
+        @Query("print_service", encoded = true) printService: String
+    ): Call<List<String>>
 
     @GET("/api/get/layout_with_photos")
-    fun getLayoutWithPhoto(@Query("layout", encoded = true) layout: String, @Query("media_size_name", encoded = true) mediaSizeName: String,): Call<ResponseBody>
+    fun getLayoutWithPhoto(
+        @Query("layout", encoded = true) layout: String,
+        @Query("media_size_name", encoded = true) mediaSizeName: String,
+        @Query("print_service", encoded = true) printService: String
+    ): Call<ResponseBody>
 
     @GET("/api/check/inet_address")
     fun checkInetAddress(@Query("inet_address", encoded = true) inetAddress: String): Call<Boolean>

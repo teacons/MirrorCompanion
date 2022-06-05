@@ -1,7 +1,5 @@
 package ru.fbear.mirror_companion.settings
 
-import Spinnable
-import Spinner
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -18,6 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.fbear.mirror_companion.CompanionViewModel
+import ru.fbear.mirror_companion.Spinnable
+import ru.fbear.mirror_companion.Spinner
 
 
 @Composable

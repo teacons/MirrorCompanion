@@ -1,7 +1,5 @@
 package ru.fbear.mirror_companion.settings
 
-import Spinnable
-import Spinner
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
@@ -18,6 +16,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.godaddy.android.colorpicker.harmony.ColorHarmonyMode
 import com.godaddy.android.colorpicker.harmony.HarmonyColorPicker
 import ru.fbear.mirror_companion.CompanionViewModel
+import ru.fbear.mirror_companion.Spinnable
+import ru.fbear.mirror_companion.Spinner
 
 @Composable
 fun GuestScreenSettings(viewModel: CompanionViewModel = viewModel()) {

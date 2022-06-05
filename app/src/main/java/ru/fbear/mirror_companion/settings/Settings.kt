@@ -1,6 +1,7 @@
 package ru.fbear.mirror_companion.settings
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
@@ -48,7 +49,7 @@ fun Settings() {
         }
     ) {
         Box(
-            modifier = Modifier.padding(15.dp)
+            modifier = Modifier.padding(15.dp).fillMaxSize()
         ) {
             when (selectedMenuItem) {
                 MenuItem.PhotoCamera -> CameraSettings()
