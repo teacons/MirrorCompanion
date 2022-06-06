@@ -11,6 +11,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import ru.fbear.mirror_companion.settings.CameraConfigEntry
 import ru.fbear.mirror_companion.settings.Settings
 import java.io.IOException
 
@@ -27,6 +28,8 @@ class CompanionViewModel : ViewModel() {
     val fonts = MutableLiveData<List<String>>(emptyList())
     val cameras = MutableLiveData<List<String>>(emptyList())
     val settings = MutableLiveData<Settings>(null)
+
+    val cameraConfigs = MutableLiveData<List<CameraConfigEntry>>(emptyList())
 
     private val oldSettings = MutableLiveData<Settings>(null)
 
@@ -46,8 +49,12 @@ class CompanionViewModel : ViewModel() {
         update(Type.Cameras)
 
         settings.observeForever { settings ->
+//            todo починить постоянное обновление
             if (settings == null || oldSettings.value == null) {
                 return@observeForever
+            }
+            if (settings.cameraName != oldSettings.value!!.cameraName || cameraConfigs.value!!.isEmpty()) {
+                update(Type.CameraConfig)
             }
             if (settings.printerName != oldSettings.value!!.printerName || printServiceMediaSizes.value!!.isEmpty()) {
                 update(Type.MediaSizeNames)
@@ -72,6 +79,7 @@ class CompanionViewModel : ViewModel() {
             Type.Cameras -> updateWithReturnTypeListOfString(type)
             Type.Settings -> updateSettings()
             Type.LayoutWithPhoto -> updateLayoutWithPhoto()
+            Type.CameraConfig -> updateCameraConfig()
         }
     }
 
@@ -97,7 +105,7 @@ class CompanionViewModel : ViewModel() {
                 override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     response.body()?.let {
                         printServicePreview.value =
-                            BitmapFactory.decodeByteArray(it.bytes(), 0, it.bytes().size)?.asImageBitmap()
+                            BitmapFactory.decodeStream(it.byteStream())?.asImageBitmap()
                     }
                 }
 
@@ -106,6 +114,18 @@ class CompanionViewModel : ViewModel() {
                 }
 
             })
+    }
+
+    private fun updateCameraConfig() {
+        api.getCameraConfigs(settings.value!!.cameraName).enqueue(object : Callback<List<CameraConfigEntry>> {
+            override fun onResponse(call: Call<List<CameraConfigEntry>>, response: Response<List<CameraConfigEntry>>) {
+                response.body()?.let { cameraConfigs.value = it }
+            }
+
+            override fun onFailure(call: Call<List<CameraConfigEntry>>, t: Throwable) {
+                TODO("Not yet implemented")
+            }
+        })
     }
 
     private fun updateWithReturnTypeListOfString(type: Type) {
@@ -146,6 +166,12 @@ class CompanionViewModel : ViewModel() {
             false
         }
     }
+
+    fun updateCameraConfigValue(configName: String, configValue: String) {
+        cameraConfigs.value = cameraConfigs.value!!.map {
+            if (it.configName == configName) it.copy(value = configValue) else it
+        }
+    }
 }
 
 enum class Type {
@@ -155,5 +181,6 @@ enum class Type {
     Fonts,
     Cameras,
     LayoutWithPhoto,
-    Settings
+    Settings,
+    CameraConfig
 }

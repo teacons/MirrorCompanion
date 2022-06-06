@@ -12,6 +12,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+data class CameraConfigEntry(
+    val configName: String,
+    val value: String,
+    val choices: List<String>
+)
+
 data class Settings(
     var cameraName: String,
 

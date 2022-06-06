@@ -3,6 +3,8 @@ package ru.fbear.mirror_companion.settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,9 +23,13 @@ fun CameraSettings(viewModel: CompanionViewModel = viewModel()) {
 
     val cameraList by viewModel.cameras.observeAsState(emptyList())
 
+    val cameraConfigs by viewModel.cameraConfigs.observeAsState(emptyList())
+
+    val verticalState = rememberScrollState()
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().verticalScroll(verticalState)
     ) {
         Spinner(
             data = cameraList.map {
@@ -38,6 +44,22 @@ fun CameraSettings(viewModel: CompanionViewModel = viewModel()) {
             label = { Text(text = "Камера") }
         ) {
             Text(text = it.toString())
+        }
+        cameraConfigs.forEach { config ->
+            Spinner(
+                data = config.choices.map {
+                    object : Spinnable {
+                        override fun toString() = it
+                    }
+                },
+                value = config.value,
+                onSelectedChanges = {
+                    viewModel.updateCameraConfigValue(config.configName, it.toString())
+                },
+                label = { Text(text = config.configName) }
+            ) {
+                Text(text = it.toString())
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
+import ru.fbear.mirror_companion.settings.CameraConfigEntry
 import ru.fbear.mirror_companion.settings.Settings
 
 
@@ -38,4 +39,7 @@ interface PhotoMirrorApi {
 
     @GET("/api/get/cameras")
     fun getCameras(): Call<List<String>>
+
+    @GET("/api/get/camera/configs")
+    fun getCameraConfigs(@Query("camera_name", encoded = true) cameraName: String): Call<List<CameraConfigEntry>>
 }
