@@ -33,6 +33,10 @@ class CompanionViewModel : ViewModel() {
 
     private val oldSettings = MutableLiveData<Settings>(null)
 
+    var isRefreshingCameras = MutableLiveData(false)
+
+    var isRefreshingPrinters = MutableLiveData(false)
+
     fun initConnection(address: String) {
         retrofit = Retrofit.Builder()
             .baseUrl("http://$address:8080")
@@ -62,11 +66,24 @@ class CompanionViewModel : ViewModel() {
             if (settings.printerMediaSizeName != oldSettings.value!!.printerMediaSizeName || printServiceLayouts.value!!.isEmpty()) {
                 update(Type.Layouts)
             }
+            println("kekss ${settings.layout != oldSettings.value!!.layout}")
             if (settings.layout != oldSettings.value!!.layout || printServicePreview.value == null) {
                 update(Type.LayoutWithPhoto)
             }
             oldSettings.value = settings
         }
+    }
+
+    fun refreshCameras() {
+        isRefreshingCameras.value = true
+        update(Type.Settings)
+        update(Type.Cameras)
+    }
+
+    fun refreshPrinters() {
+        isRefreshingPrinters.value = true
+        update(Type.Settings)
+        update(Type.PrintServices)
     }
 
 
@@ -100,32 +117,39 @@ class CompanionViewModel : ViewModel() {
 
     private fun updateLayoutWithPhoto() {
         val settings = settings.value!!
-        api.getLayoutWithPhoto(settings.layout, settings.printerMediaSizeName, settings.printerName)
-            .enqueue(object : Callback<ResponseBody> {
-                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                    response.body()?.let {
-                        printServicePreview.value =
-                            BitmapFactory.decodeStream(it.byteStream())?.asImageBitmap()
+        if (settings.layout != null && settings.printerMediaSizeName != null && settings.printerName != null) {
+            api.getLayoutWithPhoto(settings.layout!!, settings.printerMediaSizeName!!, settings.printerName!!)
+                .enqueue(object : Callback<ResponseBody> {
+                    override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                        response.body()?.let {
+                            printServicePreview.value =
+                                BitmapFactory.decodeStream(it.byteStream())?.asImageBitmap()
+                        }
                     }
-                }
 
-                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                    override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
 //                                TODO("Not yet implemented")
-                }
+                    }
 
-            })
+                })
+        }
     }
 
     private fun updateCameraConfig() {
-        api.getCameraConfigs(settings.value!!.cameraName).enqueue(object : Callback<List<CameraConfigEntry>> {
-            override fun onResponse(call: Call<List<CameraConfigEntry>>, response: Response<List<CameraConfigEntry>>) {
-                response.body()?.let { cameraConfigs.value = it }
-            }
+        if (settings.value!!.cameraName != null) {
+            api.getCameraConfigs(settings.value!!.cameraName!!).enqueue(object : Callback<List<CameraConfigEntry>> {
+                override fun onResponse(
+                    call: Call<List<CameraConfigEntry>>,
+                    response: Response<List<CameraConfigEntry>>
+                ) {
+                    response.body()?.let { cameraConfigs.value = it }
+                }
 
-            override fun onFailure(call: Call<List<CameraConfigEntry>>, t: Throwable) {
-                TODO("Not yet implemented")
-            }
-        })
+                override fun onFailure(call: Call<List<CameraConfigEntry>>, t: Throwable) {
+                    TODO("Not yet implemented")
+                }
+            })
+        }
     }
 
     private fun updateWithReturnTypeListOfString(type: Type) {
@@ -136,9 +160,15 @@ class CompanionViewModel : ViewModel() {
                     when (type) {
                         Type.MediaSizeNames -> printServiceMediaSizes.value = it
                         Type.Layouts -> printServiceLayouts.value = it
-                        Type.PrintServices -> printServices.value = it
+                        Type.PrintServices -> {
+                            printServices.value = it
+                            if (isRefreshingPrinters.value!!) isRefreshingPrinters.value = false
+                        }
                         Type.Fonts -> fonts.value = it
-                        Type.Cameras -> cameras.value = it
+                        Type.Cameras -> {
+                            cameras.value = it
+                            if (isRefreshingCameras.value!!) isRefreshingCameras.value = false
+                        }
                         else -> throw IllegalArgumentException("Impossible")
                     }
                 }
@@ -150,8 +180,11 @@ class CompanionViewModel : ViewModel() {
         }
 
         when (type) {
-            Type.MediaSizeNames -> api.getMediaSizeNames(settings!!.printerName).enqueue(callback)
-            Type.Layouts -> api.getLayouts(settings!!.printerMediaSizeName, settings.printerName).enqueue(callback)
+            Type.MediaSizeNames ->
+                if (settings!!.printerName != null) api.getMediaSizeNames(settings.printerName!!).enqueue(callback)
+            Type.Layouts ->
+                if (settings!!.printerName != null && settings.printerMediaSizeName != null)
+                    api.getLayouts(settings.printerMediaSizeName!!, settings.printerName!!).enqueue(callback)
             Type.PrintServices -> api.getPrintServices().enqueue(callback)
             Type.Fonts -> api.getFonts().enqueue(callback)
             Type.Cameras -> api.getCameras().enqueue(callback)

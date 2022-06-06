@@ -19,25 +19,25 @@ data class CameraConfigEntry(
 )
 
 data class Settings(
-    var cameraName: String,
+    var cameraName: String?,
 
-    var printerName: String,
+    var printerName: String?,
 
-    var printerMediaSizeName: String,
+    var printerMediaSizeName: String?,
 
-    var photoserverEnabled: Boolean,
-    var photoserverAddress: String,
+    var photoserverEnabled: Boolean?,
+    var photoserverAddress: String?,
 
-    var layout: String,
+    var layout: String?,
 
-    var guestHelloText: String,
-    var guestShootText: String,
-    var guestWaitText: String,
-    var guestShootTimer: Int,
-    var guestBackgroundFilepath: String,
-    var guestTextFontFamily: String,
-    var guestTextFontSize: Int,
-    var guestTextFontColor: ULong
+    var guestHelloText: String?,
+    var guestShootText: String?,
+    var guestWaitText: String?,
+    var guestShootTimer: Int?,
+    var guestBackgroundFilepath: String?,
+    var guestTextFontFamily: String?,
+    var guestTextFontSize: Int?,
+    var guestTextFontColor: ULong?
 )
 
 @Composable
@@ -62,7 +62,6 @@ fun Settings() {
                 MenuItem.Printer -> PrinterSettings()
                 MenuItem.PhotoServer -> PhotoserverSettings()
                 MenuItem.GuestScreen -> GuestScreenSettings()
-
             }
         }
     }

@@ -1,10 +1,10 @@
 package ru.fbear.mirror_companion.settings
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import ru.fbear.mirror_companion.CompanionViewModel
 import ru.fbear.mirror_companion.Spinnable
 import ru.fbear.mirror_companion.Spinner
@@ -33,60 +35,72 @@ fun PrinterSettings(viewModel: CompanionViewModel = viewModel()) {
 
     val settings by viewModel.settings.observeAsState(null)
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Spinner(
-            data = printServices.map {
-                object : Spinnable {
-                    override fun toString() = it
-                }
-            },
-            value = settings?.printerName ?: "",
-            onSelectedChanges = {
-                viewModel.settings.value = viewModel.settings.value?.copy(printerName = it.toString())
-            },
-            label = { Text(text = "Принтер") }
-        ) {
-            Text(text = it.toString())
-        }
+    val isRefreshingPrinters by viewModel.isRefreshingPrinters.observeAsState(false)
 
-        Spinner(
-            data = mediaSizes.map {
-                object : Spinnable {
-                    override fun toString() = it
-                }
-            },
-            value = settings?.printerMediaSizeName ?: "",
-            onSelectedChanges = {
-                viewModel.settings.value = viewModel.settings.value?.copy(printerMediaSizeName = it.toString())
-            },
-            label = { Text(text = "Размер бумаги") }
+    SwipeRefresh(
+        state = rememberSwipeRefreshState(isRefreshingPrinters),
+        onRefresh = { viewModel.refreshPrinters() },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
         ) {
-            Text(text = it.toString())
-        }
+            Spinner(
+                data = printServices.map {
+                    object : Spinnable {
+                        override fun toString() = it
+                    }
+                },
+                value = settings?.printerName ?: "",
+                onSelectedChanges = {
+                    viewModel.settings.value = viewModel.settings.value?.copy(printerName = it.toString())
+                },
+                label = { Text(text = "Принтер") }
+            ) {
+                Text(text = it.toString())
+            }
 
-        Spinner(
-            data = layouts.map {
-                object : Spinnable {
-                    override fun toString() = it
-                }
-            },
-            value = settings?.layout ?: "",
-            onSelectedChanges = {
-                viewModel.settings.value = viewModel.settings.value?.copy(layout = it.toString())
-            },
-            label = { Text(text = "Совместимый макет") }
-        ) {
-            Text(text = it.toString())
-        }
+            Spinner(
+                data = mediaSizes.map {
+                    object : Spinnable {
+                        override fun toString() = it
+                    }
+                },
+                value = settings?.printerMediaSizeName ?: "",
+                onSelectedChanges = {
+                    viewModel.settings.value = viewModel.settings.value?.copy(printerMediaSizeName = it.toString())
+                },
+                label = { Text(text = "Размер бумаги") }
+            ) {
+                Text(text = it.toString())
+            }
 
-        if (layoutPreview != null) {
-            Image(
-                bitmap = layoutPreview!!,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .border(BorderStroke(2.dp, Color.Black))
-            )
-        } else CircularProgressIndicator()
+            Spinner(
+                data = layouts.map {
+                    object : Spinnable {
+                        override fun toString() = it
+                    }
+                },
+                value = settings?.layout ?: "",
+                onSelectedChanges = {
+                    viewModel.settings.value = viewModel.settings.value?.copy(layout = it.toString())
+                },
+                label = { Text(text = "Совместимый макет") }
+            ) {
+                Text(text = it.toString())
+            }
+
+            if (layoutPreview != null) {
+                Image(
+                    bitmap = layoutPreview!!,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .border(BorderStroke(2.dp, Color.Black))
+                        .fillMaxSize()
+                )
+            } else CircularProgressIndicator()
+        }
     }
 }
