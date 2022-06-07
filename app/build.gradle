@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "ru.fbear.mirror_companion"
-        minSdk 21
+        minSdk 23
         targetSdk 32
         versionCode 1
         versionName "1.0"
@@ -44,6 +44,12 @@ android {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
+    }
+}
+
+configurations {
+    all {
+        exclude module: 'commons-logging'
     }
 }
 

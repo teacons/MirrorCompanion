@@ -20,6 +20,8 @@ class CompanionViewModel : ViewModel() {
 
     private lateinit var api: PhotoMirrorApi
 
+    var incomingChanges = MutableLiveData(false)
+
     val printServices = MutableLiveData<List<String>>(emptyList())
     val printServiceMediaSizes = MutableLiveData(emptyList<String>())
     val printServiceLayouts = MutableLiveData(emptyList<String>())
@@ -30,12 +32,17 @@ class CompanionViewModel : ViewModel() {
     val settings = MutableLiveData<Settings>(null)
 
     val cameraConfigs = MutableLiveData<List<CameraConfigEntry>>(emptyList())
+    val oldCameraConfigs = MutableLiveData<List<CameraConfigEntry>>(emptyList())
 
     private val oldSettings = MutableLiveData<Settings>(null)
 
     var isRefreshingCameras = MutableLiveData(false)
 
     var isRefreshingPrinters = MutableLiveData(false)
+
+    val mirrorIsLocked = MutableLiveData(false)
+
+    val mirrorIsShutdown = MutableLiveData(false)
 
     fun initConnection(address: String) {
         retrofit = Retrofit.Builder()
@@ -52,31 +59,44 @@ class CompanionViewModel : ViewModel() {
 
         update(Type.Cameras)
 
+        mirrorIsLocked.value = false
+
+        mirrorIsShutdown.value = false
+
         settings.observeForever { settings ->
-//            todo починить постоянное обновление
-            if (settings == null || oldSettings.value == null) {
+            if (settings == null) {
                 return@observeForever
             }
-            if (settings.cameraName != oldSettings.value!!.cameraName || cameraConfigs.value!!.isEmpty()) {
+            if (settings != oldSettings.value && oldSettings.value != null) incomingChanges.value = true
+            if (settings.cameraName != oldSettings.value?.cameraName || cameraConfigs.value!!.isEmpty()) {
                 update(Type.CameraConfig)
             }
-            if (settings.printerName != oldSettings.value!!.printerName || printServiceMediaSizes.value!!.isEmpty()) {
+            if (settings.printerName != oldSettings.value?.printerName || printServiceMediaSizes.value!!.isEmpty()) {
+                printServicePreview.value = null
                 update(Type.MediaSizeNames)
             }
-            if (settings.printerMediaSizeName != oldSettings.value!!.printerMediaSizeName || printServiceLayouts.value!!.isEmpty()) {
+            if (settings.printerMediaSizeName != oldSettings.value?.printerMediaSizeName || printServiceLayouts.value!!.isEmpty()) {
+                printServicePreview.value = null
                 update(Type.Layouts)
             }
-            println("kekss ${settings.layout != oldSettings.value!!.layout}")
-            if (settings.layout != oldSettings.value!!.layout || printServicePreview.value == null) {
+            if (settings.layout != oldSettings.value?.layout || printServicePreview.value == null) {
+                printServicePreview.value = null
                 update(Type.LayoutWithPhoto)
             }
             oldSettings.value = settings
+        }
+
+        cameraConfigs.observeForever {
+            if (it.isNullOrEmpty()) return@observeForever
+            if (it != oldCameraConfigs.value  && !oldCameraConfigs.value.isNullOrEmpty()) incomingChanges.value = true
+            oldCameraConfigs.value = it
         }
     }
 
     fun refreshCameras() {
         isRefreshingCameras.value = true
         update(Type.Settings)
+        update(Type.CameraConfig)
         update(Type.Cameras)
     }
 
@@ -86,6 +106,30 @@ class CompanionViewModel : ViewModel() {
         update(Type.PrintServices)
     }
 
+    fun sendNewSettings() {
+        api.sendSettings(settings.value!!).enqueue(object : Callback<ResponseBody> {
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                incomingChanges.value = false
+            }
+
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+//                TODO("Not yet implemented")
+            }
+        })
+        sendCameraConfiguration()
+    }
+
+    private fun sendCameraConfiguration() {
+        api.sendCameraConfiguration(cameraConfigs.value!!).enqueue(object : Callback<ResponseBody> {
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+//                TODO("Not yet implemented")
+            }
+
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+//                TODO("Not yet implemented")
+            }
+        })
+    }
 
     private fun update(type: Type) {
         when (type) {
@@ -103,10 +147,7 @@ class CompanionViewModel : ViewModel() {
     private fun updateSettings() {
         api.getSettings().enqueue(object : Callback<Settings> {
             override fun onResponse(call: Call<Settings>, response: Response<Settings>) {
-                response.body()?.let {
-                    oldSettings.value = it
-                    settings.value = it
-                }
+                response.body()?.let { settings.value = it }
             }
 
             override fun onFailure(call: Call<Settings>, t: Throwable) {
@@ -118,7 +159,7 @@ class CompanionViewModel : ViewModel() {
     private fun updateLayoutWithPhoto() {
         val settings = settings.value!!
         if (settings.layout != null && settings.printerMediaSizeName != null && settings.printerName != null) {
-            api.getLayoutWithPhoto(settings.layout!!, settings.printerMediaSizeName!!, settings.printerName!!)
+            api.getLayoutWithPhoto(settings.layout!!)
                 .enqueue(object : Callback<ResponseBody> {
                     override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                         response.body()?.let {
@@ -149,7 +190,7 @@ class CompanionViewModel : ViewModel() {
                     TODO("Not yet implemented")
                 }
             })
-        }
+        } else cameraConfigs.value = emptyList()
     }
 
     private fun updateWithReturnTypeListOfString(type: Type) {
@@ -204,6 +245,34 @@ class CompanionViewModel : ViewModel() {
         cameraConfigs.value = cameraConfigs.value!!.map {
             if (it.configName == configName) it.copy(value = configValue) else it
         }
+    }
+
+    fun lockMirror(lock: Boolean = true) {
+        val callback = object : Callback<Boolean> {
+            override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
+                response.body()?.let { mirrorIsLocked.value = it }
+            }
+
+            override fun onFailure(call: Call<Boolean>, t: Throwable) {
+//                TODO("Not yet implemented")
+            }
+        }
+        if (lock)
+            api.lockMirror().enqueue(callback)
+        else
+            api.unlockMirror().enqueue(callback)
+    }
+
+    fun shutdownMirror() {
+        api.shutdownMirror().enqueue(object : Callback<Boolean> {
+            override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
+                response.body()?.let { mirrorIsShutdown.value = it }
+            }
+
+            override fun onFailure(call: Call<Boolean>, t: Throwable) {
+//                TODO("Not yet implemented")
+            }
+        })
     }
 }
 

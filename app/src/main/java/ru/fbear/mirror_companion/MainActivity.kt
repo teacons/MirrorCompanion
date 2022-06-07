@@ -7,7 +7,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import ru.fbear.mirror_companion.settings.Settings
 import ru.fbear.mirror_companion.ui.theme.MirrorCompanionTheme
@@ -22,10 +22,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             MirrorCompanionTheme {
                 Surface(color = MaterialTheme.colors.background) {
-                    var state by remember { mutableStateOf(State.ConnectionSettings) }
+                    var state by rememberSaveable { mutableStateOf(State.ConnectionSettings) }
                     when (state) {
                         State.ConnectionSettings -> ConnectionSettings { state = State.MirrorSettings }
-                        State.MirrorSettings -> Settings()
+                        State.MirrorSettings -> Settings { state = State.ConnectionSettings }
                     }
                 }
             }

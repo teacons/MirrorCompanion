@@ -1,6 +1,7 @@
 package ru.fbear.mirror_companion.settings
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -11,6 +12,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.godaddy.android.colorpicker.harmony.ColorHarmonyMode
@@ -27,10 +30,8 @@ fun GuestScreenSettings(viewModel: CompanionViewModel = viewModel()) {
     val fonts by viewModel.fonts.observeAsState(emptyList())
 
     var guestHelloTextError by rememberSaveable { mutableStateOf(false) }
-    var guestShootTimerError by rememberSaveable { mutableStateOf(false) }
     var guestShootTextError by rememberSaveable { mutableStateOf(false) }
     var guestWaitTextError by rememberSaveable { mutableStateOf(false) }
-    var guestTextFontSizeError by rememberSaveable { mutableStateOf(false) }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -38,11 +39,10 @@ fun GuestScreenSettings(viewModel: CompanionViewModel = viewModel()) {
         OutlinedTextField(
             value = settings?.guestHelloText ?: "",
             onValueChange = {
-                if (it.isNotEmpty()) {
-                    viewModel.settings.value = viewModel.settings.value?.copy(guestHelloText = it)
-                    guestHelloTextError = false
-                } else guestHelloTextError = true
+                viewModel.settings.value = viewModel.settings.value?.copy(guestHelloText = it)
+                guestHelloTextError = it.isEmpty()
             },
+            keyboardOptions = KeyboardOptions(autoCorrect = true, keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
             maxLines = 2,
             isError = guestHelloTextError,
             label = { Text(text = "Текст приветствия") },
@@ -51,11 +51,10 @@ fun GuestScreenSettings(viewModel: CompanionViewModel = viewModel()) {
         OutlinedTextField(
             value = settings?.guestShootText ?: "",
             onValueChange = {
-                if (it.isNotEmpty()) {
-                    viewModel.settings.value = viewModel.settings.value?.copy(guestShootText = it)
-                    guestShootTextError = false
-                } else guestShootTextError = true
+                viewModel.settings.value = viewModel.settings.value?.copy(guestShootText = it)
+                guestShootTextError = it.isEmpty()
             },
+            keyboardOptions = KeyboardOptions(autoCorrect = true, keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
             maxLines = 2,
             isError = guestShootTextError,
             label = { Text(text = "Текст съёмки") },
@@ -64,11 +63,10 @@ fun GuestScreenSettings(viewModel: CompanionViewModel = viewModel()) {
         OutlinedTextField(
             value = settings?.guestWaitText ?: "",
             onValueChange = {
-                if (it.isNotEmpty()) {
-                    viewModel.settings.value = viewModel.settings.value?.copy(guestWaitText = it)
-                    guestWaitTextError = false
-                } else guestWaitTextError = true
+                viewModel.settings.value = viewModel.settings.value?.copy(guestWaitText = it)
+                guestWaitTextError = it.isEmpty()
             },
+            keyboardOptions = KeyboardOptions(autoCorrect = true, keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
             maxLines = 2,
             isError = guestWaitTextError,
             label = { Text(text = "Текст ожидания фотографии") },
@@ -77,13 +75,11 @@ fun GuestScreenSettings(viewModel: CompanionViewModel = viewModel()) {
         OutlinedTextField(
             value = settings?.guestShootTimer?.toString() ?: "",
             onValueChange = {
-                if (it.toIntOrNull() != null) {
-                    viewModel.settings.value = viewModel.settings.value?.copy(guestShootTimer = it.toInt())
-                    guestShootTimerError = false
-                } else guestShootTimerError = true
+                viewModel.settings.value =
+                    viewModel.settings.value?.copy(guestShootTimer = Regex("""\D""").replace(it, "").toIntOrNull())
             },
+            keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
             maxLines = 1,
-            isError = guestShootTimerError,
             label = { Text(text = "Значение таймера") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -106,13 +102,11 @@ fun GuestScreenSettings(viewModel: CompanionViewModel = viewModel()) {
         OutlinedTextField(
             value = settings?.guestTextFontSize?.toString() ?: "",
             onValueChange = {
-                if (it.toIntOrNull() != null) {
-                    viewModel.settings.value = viewModel.settings.value?.copy(guestTextFontSize = it.toInt())
-                    guestTextFontSizeError = false
-                } else guestTextFontSizeError = true
+                viewModel.settings.value =
+                    viewModel.settings.value?.copy(guestTextFontSize = Regex("""\D""").replace(it, "").toIntOrNull())
             },
+            keyboardOptions = KeyboardOptions(autoCorrect = false, keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
             maxLines = 1,
-            isError = guestTextFontSizeError,
             label = { Text(text = "Размер шрифта") },
             modifier = Modifier.fillMaxWidth()
         )

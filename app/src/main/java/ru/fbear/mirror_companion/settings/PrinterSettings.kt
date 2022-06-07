@@ -1,10 +1,12 @@
 package ru.fbear.mirror_companion.settings
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -12,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
@@ -44,7 +45,7 @@ fun PrinterSettings(viewModel: CompanionViewModel = viewModel()) {
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             Spinner(
                 data = printServices.map {
@@ -54,7 +55,11 @@ fun PrinterSettings(viewModel: CompanionViewModel = viewModel()) {
                 },
                 value = settings?.printerName ?: "",
                 onSelectedChanges = {
-                    viewModel.settings.value = viewModel.settings.value?.copy(printerName = it.toString())
+                    viewModel.settings.value = viewModel.settings.value?.copy(
+                        printerName = it.toString(),
+                        printerMediaSizeName = null,
+                        layout = null
+                    )
                 },
                 label = { Text(text = "Принтер") }
             ) {
@@ -69,7 +74,10 @@ fun PrinterSettings(viewModel: CompanionViewModel = viewModel()) {
                 },
                 value = settings?.printerMediaSizeName ?: "",
                 onSelectedChanges = {
-                    viewModel.settings.value = viewModel.settings.value?.copy(printerMediaSizeName = it.toString())
+                    viewModel.settings.value = viewModel.settings.value?.copy(
+                        printerMediaSizeName = it.toString(),
+                        layout = null
+                    )
                 },
                 label = { Text(text = "Размер бумаги") }
             ) {
@@ -91,16 +99,18 @@ fun PrinterSettings(viewModel: CompanionViewModel = viewModel()) {
                 Text(text = it.toString())
             }
 
-            if (layoutPreview != null) {
-                Image(
-                    bitmap = layoutPreview!!,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .border(BorderStroke(2.dp, Color.Black))
-                        .fillMaxSize()
-                )
-            } else CircularProgressIndicator()
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                if (layoutPreview != null) {
+                    Image(
+                        bitmap = layoutPreview!!,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (settings?.layout != null) CircularProgressIndicator()
+            }
         }
     }
 }

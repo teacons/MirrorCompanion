@@ -6,9 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 
 interface Spinnable {
-
     override fun toString(): String
-
 }
 
 @OptIn(ExperimentalMaterialApi::class)

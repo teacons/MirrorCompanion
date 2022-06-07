@@ -2,7 +2,9 @@ package ru.fbear.mirror_companion
 
 import okhttp3.ResponseBody
 import retrofit2.Call
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Query
 import ru.fbear.mirror_companion.settings.CameraConfigEntry
 import ru.fbear.mirror_companion.settings.Settings
@@ -27,8 +29,6 @@ interface PhotoMirrorApi {
     @GET("/api/get/layout_with_photos")
     fun getLayoutWithPhoto(
         @Query("layout", encoded = true) layout: String,
-        @Query("media_size_name", encoded = true) mediaSizeName: String,
-        @Query("print_service", encoded = true) printService: String
     ): Call<ResponseBody>
 
     @GET("/api/check/inet_address")
@@ -42,4 +42,19 @@ interface PhotoMirrorApi {
 
     @GET("/api/get/camera/configs")
     fun getCameraConfigs(@Query("camera_name", encoded = true) cameraName: String): Call<List<CameraConfigEntry>>
+
+    @POST("/api/post/settings")
+    fun sendSettings(@Body settings: Settings): Call<ResponseBody>
+
+    @POST("/api/post/camera_config")
+    fun sendCameraConfiguration(@Body cameraConfiguration: List<CameraConfigEntry>): Call<ResponseBody>
+
+    @POST("/api/post/lock")
+    fun lockMirror(): Call<Boolean>
+
+    @POST("/api/post/unlock")
+    fun unlockMirror(): Call<Boolean>
+
+    @POST("/api/post/shutdown")
+    fun shutdownMirror(): Call<Boolean>
 }
