@@ -20,7 +20,8 @@ enum class MenuItem(val itemName: String) {
     Printer("Принтер"),
     PhotoServer("Фотосервер"),
     GuestScreen("Экран работы"),
-    Control("Блокировка и выключение")
+    Control("Блокировка и выключение"),
+    Disconnect("Отключиться")
 }
 
 @OptIn(ExperimentalMaterialApi::class)

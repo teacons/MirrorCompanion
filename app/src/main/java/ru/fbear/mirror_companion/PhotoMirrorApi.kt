@@ -7,6 +7,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
 import ru.fbear.mirror_companion.settings.CameraConfigEntry
+import ru.fbear.mirror_companion.settings.Event
 import ru.fbear.mirror_companion.settings.Settings
 
 
@@ -57,4 +58,11 @@ interface PhotoMirrorApi {
 
     @POST("/api/post/shutdown")
     fun shutdownMirror(): Call<Boolean>
+
+    @GET("/api/get/events")
+    fun getEvents(@Query("last_id", encoded = true) lastId: Int): Call<List<Event>>
+
+    @GET("/api/get/last_event_id")
+    fun getLastEventId(): Call<Int>
+
 }

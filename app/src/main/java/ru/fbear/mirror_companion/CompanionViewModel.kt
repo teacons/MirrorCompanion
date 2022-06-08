@@ -20,6 +20,8 @@ class CompanionViewModel : ViewModel() {
 
     private lateinit var api: PhotoMirrorApi
 
+    lateinit var address: String
+
     var incomingChanges = MutableLiveData(false)
 
     val printServices = MutableLiveData<List<String>>(emptyList())
@@ -32,7 +34,7 @@ class CompanionViewModel : ViewModel() {
     val settings = MutableLiveData<Settings>(null)
 
     val cameraConfigs = MutableLiveData<List<CameraConfigEntry>>(emptyList())
-    val oldCameraConfigs = MutableLiveData<List<CameraConfigEntry>>(emptyList())
+    private val oldCameraConfigs = MutableLiveData<List<CameraConfigEntry>>(emptyList())
 
     private val oldSettings = MutableLiveData<Settings>(null)
 
@@ -44,12 +46,16 @@ class CompanionViewModel : ViewModel() {
 
     val mirrorIsShutdown = MutableLiveData(false)
 
+    val isConnectionError = MutableLiveData(false)
+
     fun initConnection(address: String) {
         retrofit = Retrofit.Builder()
             .baseUrl("http://$address:8080")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         api = retrofit.create(PhotoMirrorApi::class.java)
+
+        this.address = address
 
         update(Type.Settings)
 
@@ -62,6 +68,8 @@ class CompanionViewModel : ViewModel() {
         mirrorIsLocked.value = false
 
         mirrorIsShutdown.value = false
+
+        isConnectionError.value = false
 
         settings.observeForever { settings ->
             if (settings == null) {
@@ -113,7 +121,7 @@ class CompanionViewModel : ViewModel() {
             }
 
             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-//                TODO("Not yet implemented")
+                isConnectionError.value = true
             }
         })
         sendCameraConfiguration()
@@ -126,7 +134,7 @@ class CompanionViewModel : ViewModel() {
             }
 
             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-//                TODO("Not yet implemented")
+                isConnectionError.value = true
             }
         })
     }
@@ -151,7 +159,7 @@ class CompanionViewModel : ViewModel() {
             }
 
             override fun onFailure(call: Call<Settings>, t: Throwable) {
-//                TODO("Not yet implemented")
+                isConnectionError.value = true
             }
         })
     }
@@ -169,7 +177,7 @@ class CompanionViewModel : ViewModel() {
                     }
 
                     override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-//                                TODO("Not yet implemented")
+                        isConnectionError.value = true
                     }
 
                 })
@@ -187,7 +195,7 @@ class CompanionViewModel : ViewModel() {
                 }
 
                 override fun onFailure(call: Call<List<CameraConfigEntry>>, t: Throwable) {
-                    TODO("Not yet implemented")
+                    isConnectionError.value = true
                 }
             })
         } else cameraConfigs.value = emptyList()
@@ -216,7 +224,7 @@ class CompanionViewModel : ViewModel() {
             }
 
             override fun onFailure(call: Call<List<String>>, t: Throwable) {
-//                            TODO("Not yet implemented")
+                isConnectionError.value = true
             }
         }
 
@@ -254,7 +262,7 @@ class CompanionViewModel : ViewModel() {
             }
 
             override fun onFailure(call: Call<Boolean>, t: Throwable) {
-//                TODO("Not yet implemented")
+                isConnectionError.value = true
             }
         }
         if (lock)
@@ -270,7 +278,7 @@ class CompanionViewModel : ViewModel() {
             }
 
             override fun onFailure(call: Call<Boolean>, t: Throwable) {
-//                TODO("Not yet implemented")
+                isConnectionError.value = true
             }
         })
     }

@@ -3,6 +3,7 @@ package ru.fbear.mirror_companion.settings
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Divider
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
@@ -18,6 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.fbear.mirror_companion.CompanionViewModel
+
+data class Event(
+    val subject: String,
+    val reason: String
+)
 
 data class CameraConfigEntry(
     val configName: String,
@@ -60,11 +66,19 @@ fun Settings(viewModel: CompanionViewModel = viewModel(), onShutdown: () -> Unit
 
     Scaffold(
         drawerContent = {
-            MenuItem.values().forEach {
+            listOf(
+                MenuItem.PhotoCamera,
+                MenuItem.Printer,
+                MenuItem.PhotoServer,
+                MenuItem.GuestScreen,
+                MenuItem.Control
+            ).forEach {
                 MenuItem(it, selectedMenuItem) {
                     selectedMenuItem = it
                 }
             }
+            Divider()
+            MenuItem(MenuItem.Disconnect, MenuItem.PhotoCamera, onMenuItemClick = onShutdown)
         },
         floatingActionButton = {
             if (incomingChanges) {
@@ -90,6 +104,7 @@ fun Settings(viewModel: CompanionViewModel = viewModel(), onShutdown: () -> Unit
                 MenuItem.PhotoServer -> PhotoserverSettings()
                 MenuItem.GuestScreen -> GuestScreenSettings()
                 MenuItem.Control -> Control()
+                else -> throw IllegalStateException("Impossible")
             }
         }
     }
